@@ -17,6 +17,7 @@ export const LobbyScreen: React.FC = () => {
   } = useGameStore();
 
   const isAdmin = currentPlayer?.isAdmin || false;
+  console.log(currentPlayer)
 
   useEffect(() => {
     // Socket event listeners
@@ -167,7 +168,7 @@ export const LobbyScreen: React.FC = () => {
           </motion.button>
         ) : (
           <div className="text-center">
-            <p className="text-gray-600 mb-2">Waiting for admin to start the game...</p>
+            <p className="text-gray-600 mb-2">Waiting for admin to start the gamo...</p>
             <div className="flex justify-center">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
             </div>
