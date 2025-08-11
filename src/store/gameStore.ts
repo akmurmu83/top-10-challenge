@@ -1,14 +1,21 @@
 import { create } from 'zustand';
-import { GameState, TopItem, Player } from '../types/game';
+import { GameState, TopItem, Player, Room } from '../types/game';
 
 interface GameStore extends GameState {
+  setGameMode: (mode: 'single' | 'multiplayer') => void;
   setCategory: (category: string) => void;
   setTopItems: (items: TopItem[]) => void;
   addPlayer: (name: string) => void;
+  setPlayers: (players: Player[]) => void;
   revealItem: (itemName: string, playerName: string) => boolean;
+  revealItemByRank: (rank: number, name: string, guessedBy: string) => void;
   nextPlayer: () => void;
   setGameStatus: (status: GameState['gameStatus']) => void;
   setLoading: (loading: boolean) => void;
+  setRoomId: (roomId: string) => void;
+  setCurrentPlayer: (player: Player) => void;
+  setIsMyTurn: (isMyTurn: boolean) => void;
+  updateRoom: (room: Room) => void;
   resetGame: () => void;
   getCurrentPlayer: () => Player | null;
   getTotalScore: () => number;
@@ -20,12 +27,18 @@ const initialState: GameState = {
   topItems: [],
   players: [],
   currentPlayerIndex: 0,
-  gameStatus: 'setup',
+  gameStatus: 'menu',
   isLoading: false,
+  gameMode: 'single',
+  roomId: undefined,
+  currentPlayer: undefined,
+  isMyTurn: false,
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
   ...initialState,
+
+  setGameMode: (mode) => set({ gameMode: mode }),
 
   setCategory: (category) => set({ category }),
 
@@ -39,6 +52,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
     }
   },
+
+  setPlayers: (players) => set({ players }),
 
   revealItem: (itemName, playerName) => {
     const { topItems, players } = get();
@@ -66,6 +81,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return true;
   },
 
+  revealItemByRank: (rank, name, guessedBy) => {
+    const { topItems, players } = get();
+    const updatedItems = topItems.map(item =>
+      item.rank === rank
+        ? { ...item, name, isRevealed: true, guessedBy }
+        : item
+    );
+
+    const points = 11 - rank;
+    const updatedPlayers = players.map(player =>
+      player.name === guessedBy
+        ? { ...player, score: player.score + points }
+        : player
+    );
+
+    set({ topItems: updatedItems, players: updatedPlayers });
+  },
   nextPlayer: () => {
     const { players, currentPlayerIndex } = get();
     set({
@@ -76,6 +108,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setGameStatus: (status) => set({ gameStatus: status }),
 
   setLoading: (loading) => set({ isLoading: loading }),
+
+  setRoomId: (roomId) => set({ roomId }),
+
+  setCurrentPlayer: (player) => set({ currentPlayer: player }),
+
+  setIsMyTurn: (isMyTurn) => set({ isMyTurn }),
+
+  updateRoom: (room) => {
+    set({
+      category: room.category,
+      topItems: room.topItems,
+      players: room.players,
+      currentPlayerIndex: room.currentPlayerIndex,
+      gameStatus: room.gameStatus,
+    });
+  },
 
   resetGame: () => set(initialState),
 

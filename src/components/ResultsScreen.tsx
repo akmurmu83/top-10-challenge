@@ -2,9 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Medal, Star, RotateCcw, Home } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
+import { socketService } from '../services/socket';
 
 export const ResultsScreen: React.FC = () => {
   const { 
+    gameMode,
     category, 
     topItems, 
     players, 
@@ -16,12 +18,18 @@ export const ResultsScreen: React.FC = () => {
   const winner = sortedPlayers[0];
 
   const handlePlayAgain = () => {
+    if (gameMode === 'multiplayer') {
+      socketService.disconnect();
+    }
     resetGame();
   };
 
   const handleBackToSetup = () => {
+    if (gameMode === 'multiplayer') {
+      socketService.disconnect();
+    }
     resetGame();
-    setGameStatus('setup');
+    setGameStatus('menu');
   };
 
   return (
@@ -57,7 +65,12 @@ export const ResultsScreen: React.FC = () => {
             </motion.div>
           )}
           
-          <p className="text-lg text-white/80">Category: {category}</p>
+          <div className="text-lg text-white/80">
+            <p>Category: {category}</p>
+            {gameMode === 'multiplayer' && (
+              <p className="text-sm">Multiplayer Game</p>
+            )}
+          </div>
         </motion.div>
 
         {/* Final Leaderboard */}
@@ -184,7 +197,7 @@ export const ResultsScreen: React.FC = () => {
             className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-gray-800 rounded-2xl font-semibold text-lg hover:bg-gray-50 transition-all shadow-lg"
           >
             <Home className="w-5 h-5" />
-            New Game
+            Main Menu
           </button>
         </motion.div>
       </div>

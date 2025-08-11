@@ -1,51 +1,116 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, User, Zap, RotateCcw } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
+import { socketService } from '../services/socket';
 
 export const GameScreen: React.FC = () => {
   const [guess, setGuess] = useState('');
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   
   const {
+    gameMode,
     category,
     topItems,
     players,
     currentPlayerIndex,
+    currentPlayer,
+    isMyTurn,
     revealItem,
+    revealItemByRank,
     nextPlayer,
     getCurrentPlayer,
     getRevealedCount,
-    setGameStatus
+    setGameStatus,
+    setIsMyTurn,
+    updateRoom
   } = useGameStore();
 
-  const currentPlayer = getCurrentPlayer();
+  const activePlayer = gameMode === 'single' ? getCurrentPlayer() : currentPlayer;
   const revealedCount = getRevealedCount();
+  const currentTurnPlayer = players[currentPlayerIndex];
 
+  useEffect(() => {
+    if (gameMode === 'multiplayer') {
+      // Socket event listeners for multiplayer
+      socketService.onCorrectGuess((data) => {
+        revealItemByRank(data.item.rank, data.item.name, data.item.guessedBy);
+        setFeedback('correct');
+        
+        setTimeout(() => {
+          setFeedback(null);
+          if (data.gameStatus === 'finished') {
+            setGameStatus('finished');
+          }
+        }, 1500);
+      });
+
+      socketService.onWrongGuess((data) => {
+        setFeedback('wrong');
+        setTimeout(() => setFeedback(null), 1500);
+      });
+
+      socketService.onNextTurn((data) => {
+        const isMyTurnNow = data.currentPlayer.id === currentPlayer?.id;
+        setIsMyTurn(isMyTurnNow);
+      });
+
+      socketService.onGameEnded((data) => {
+        updateRoom(data.room);
+        setGameStatus('finished');
+      });
+
+      return () => {
+        socketService.off('correctGuess');
+        socketService.off('wrongGuess');
+        socketService.off('nextTurn');
+        socketService.off('gameEnded');
+      };
+    }
+  }, [gameMode, currentPlayer]);
   const handleGuess = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guess.trim() || !currentPlayer) return;
+    if (!guess.trim() || !activePlayer) return;
 
-    const isCorrect = revealItem(guess.trim(), currentPlayer.name);
-    
-    setFeedback(isCorrect ? 'correct' : 'wrong');
-    setGuess('');
-    
-    setTimeout(() => {
-      setFeedback(null);
-      if (isCorrect) {
-        // Check if game is complete
-        if (getRevealedCount() === 10) {
-          setGameStatus('finished');
+    if (gameMode === 'single') {
+      // Single player logic
+      const isCorrect = revealItem(guess.trim(), activePlayer.name);
+      
+      setFeedback(isCorrect ? 'correct' : 'wrong');
+      setGuess('');
+      
+      setTimeout(() => {
+        setFeedback(null);
+        if (isCorrect) {
+          // Check if game is complete
+          if (getRevealedCount() === 10) {
+            setGameStatus('finished');
+          }
         }
+        nextPlayer();
+      }, 1500);
+    } else {
+      // Multiplayer logic - send guess to server
+      if (isMyTurn) {
+        socketService.submitGuess(guess.trim());
+        setGuess('');
       }
-      nextPlayer();
-    }, 1500);
+    }
   };
 
   const handleEndGame = () => {
-    setGameStatus('finished');
+    if (gameMode === 'single') {
+      setGameStatus('finished');
+    } else {
+      // Only admin can end multiplayer game
+      if (currentPlayer?.isAdmin) {
+        socketService.endGame();
+      }
+    }
   };
+
+  const canMakeGuess = gameMode === 'single' || isMyTurn;
+  const canEndGame = gameMode === 'single' || currentPlayer?.isAdmin;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 p-4">
@@ -56,24 +121,40 @@ export const GameScreen: React.FC = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-800 mb-1">{category}</h1>
               <p className="text-gray-600">Revealed: {revealedCount}/10</p>
+              {gameMode === 'multiplayer' && (
+                <p className="text-sm text-purple-600 font-medium">
+                  Multiplayer Mode
+                </p>
+              )}
             </div>
             
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm text-gray-600">Current Player</p>
+                <p className="text-sm text-gray-600">
+                  {gameMode === 'single' ? 'Current Player' : 'Turn'}
+                </p>
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-purple-500" />
-                  <span className="font-semibold text-gray-800">{currentPlayer?.name}</span>
+                  <span className="font-semibold text-gray-800">
+                    {gameMode === 'single' ? activePlayer?.name : currentTurnPlayer?.name}
+                  </span>
+                  {gameMode === 'multiplayer' && isMyTurn && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                      Your turn
+                    </span>
+                  )}
                 </div>
               </div>
               
-              <button
-                onClick={handleEndGame}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                End Game
-              </button>
+              {canEndGame && (
+                <button
+                  onClick={handleEndGame}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  End Game
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -143,21 +224,33 @@ export const GameScreen: React.FC = () => {
               type="text"
               value={guess}
               onChange={(e) => setGuess(e.target.value)}
-              placeholder={`${currentPlayer?.name}, make your guess...`}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              disabled={feedback !== null}
+              placeholder={
+                gameMode === 'single' 
+                  ? `${activePlayer?.name}, make your guess...`
+                  : isMyTurn 
+                    ? "Your turn - make your guess..."
+                    : `Waiting for ${currentTurnPlayer?.name}...`
+              }
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+              disabled={feedback !== null || !canMakeGuess}
             />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="submit"
-              disabled={!guess.trim() || feedback !== null}
+              disabled={!guess.trim() || feedback !== null || !canMakeGuess}
               className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Zap className="w-4 h-4" />
               Guess
             </motion.button>
           </form>
+          
+          {gameMode === 'multiplayer' && !isMyTurn && (
+            <p className="text-center text-gray-500 text-sm mt-2">
+              Wait for your turn to make a guess
+            </p>
+          )}
         </div>
 
         {/* Feedback */}
@@ -197,6 +290,8 @@ export const GameScreen: React.FC = () => {
                   className={`flex items-center justify-between p-3 rounded-xl ${
                     player.name === currentPlayer?.name
                       ? 'bg-purple-100 border-2 border-purple-300'
+                      : player.name === currentTurnPlayer?.name && gameMode === 'multiplayer'
+                      ? 'bg-blue-100 border-2 border-blue-300'
                       : 'bg-gray-50'
                   }`}
                 >
@@ -209,7 +304,12 @@ export const GameScreen: React.FC = () => {
                     }`}>
                       {index + 1}
                     </div>
-                    <span className="font-medium text-gray-800">{player.name}</span>
+                    <div>
+                      <span className="font-medium text-gray-800">{player.name}</span>
+                      {gameMode === 'multiplayer' && player.name === currentTurnPlayer?.name && (
+                        <span className="text-xs text-blue-600 block">Current turn</span>
+                      )}
+                    </div>
                   </div>
                   <span className="font-bold text-purple-600">{player.score}pts</span>
                 </motion.div>

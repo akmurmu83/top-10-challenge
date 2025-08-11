@@ -9,6 +9,7 @@ export interface Player {
   id: string;
   name: string;
   score: number;
+  isAdmin?: boolean;
 }
 
 export interface GameState {
@@ -16,6 +17,20 @@ export interface GameState {
   topItems: TopItem[];
   players: Player[];
   currentPlayerIndex: number;
-  gameStatus: 'setup' | 'playing' | 'finished';
+  gameStatus: 'menu' | 'setup' | 'lobby' | 'playing' | 'finished';
   isLoading: boolean;
+  gameMode: 'single' | 'multiplayer';
+  roomId?: string;
+  currentPlayer?: Player;
+  isMyTurn?: boolean;
+}
+
+export interface Room {
+  id: string;
+  category: string;
+  topItems: TopItem[];
+  players: Player[];
+  currentPlayerIndex: number;
+  gameStatus: 'lobby' | 'playing' | 'finished';
+  createdAt: Date;
 }
