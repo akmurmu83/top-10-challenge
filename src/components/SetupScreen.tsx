@@ -7,14 +7,14 @@ import { generateTop10List } from '../services/openai';
 export const SetupScreen: React.FC = () => {
   const [inputCategory, setInputCategory] = useState('');
   const [playerName, setPlayerName] = useState('');
-  const { 
-    players, 
-    addPlayer, 
-    setCategory, 
-    setTopItems, 
-    setGameStatus, 
-    isLoading, 
-    setLoading 
+  const {
+    players,
+    addPlayer,
+    setCategory,
+    setTopItems,
+    setGameStatus,
+    isLoading,
+    setLoading
   } = useGameStore();
 
   const handleAddPlayer = (e: React.FormEvent) => {
@@ -31,12 +31,13 @@ export const SetupScreen: React.FC = () => {
     setLoading(true);
     try {
       const items = await generateTop10List(inputCategory);
+      console.log("items:", items)
       const topItems = items.map((name, index) => ({
         rank: index + 1,
         name,
         isRevealed: false
       }));
-      
+
       setCategory(inputCategory);
       setTopItems(topItems);
       setGameStatus('playing');

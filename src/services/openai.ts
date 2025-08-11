@@ -1,38 +1,34 @@
-// Mock OpenAI service for demonstration
-// In production, you would implement actual OpenAI API calls
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+    dangerouslyAllowBrowser: true // 🚨 Only for development; remove in production
+});
+
 export const generateTop10List = async (category: string): Promise<string[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // Mock responses for common categories
-  const mockData: Record<string, string[]> = {
-    "richest people": [
-      "Elon Musk", "Bernard Arnault", "Jeff Bezos", "Bill Gates", "Warren Buffett",
-      "Larry Page", "Sergey Brin", "Larry Ellison", "Steve Ballmer", "Michael Bloomberg"
-    ],
-    "popular fruits": [
-      "Apple", "Banana", "Orange", "Strawberry", "Grape",
-      "Mango", "Pineapple", "Watermelon", "Cherry", "Peach"
-    ],
-    "largest countries": [
-      "Russia", "Canada", "United States", "China", "Brazil",
-      "Australia", "India", "Argentina", "Kazakhstan", "Algeria"
-    ],
-    "most popular programming languages": [
-      "JavaScript", "Python", "Java", "TypeScript", "C#",
-      "C++", "PHP", "Shell", "C", "Ruby"
-    ]
-  };
+    try {
+        const prompt = `Give me a ranked list of the top 10 ${category}, 
+    from #1 to #10, without any extra commentary. 
+    Output each item on a new line in plain text.`;
 
-  // Find matching category or generate generic list
-  const categoryKey = Object.keys(mockData).find(key => 
-    category.toLowerCase().includes(key)
-  );
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini", // Faster and cheaper
+            messages: [
+                { role: "system", content: "You are a helpful assistant that only returns lists." },
+                { role: "user", content: prompt }
+            ],
+            temperature: 0.7
+        });
 
-  if (categoryKey) {
-    return mockData[categoryKey];
-  }
+        const text = response.choices[0].message?.content || "";
+        const list = text
+            .split("\n")
+            .map(item => item.replace(/^\d+\.?\s*/, "").trim()) // remove numbering
+            .filter(Boolean);
 
-  // Generate a generic numbered list for unknown categories
-  return Array.from({ length: 10 }, (_, i) => `Item ${i + 1} for ${category}`);
+        return list.slice(0, 10);
+    } catch (error) {
+        console.error("Error generating top 10 list:", error);
+        return [];
+    }
 };
