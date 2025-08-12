@@ -7,7 +7,7 @@ import { socketService } from '../services/socket';
 export const GameScreen: React.FC = () => {
   const [guess, setGuess] = useState('');
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
-  
+
   const {
     gameMode,
     category,
@@ -36,7 +36,7 @@ export const GameScreen: React.FC = () => {
       socketService.onCorrectGuess((data) => {
         revealItemByRank(data.item.rank, data.item.name, data.item.guessedBy);
         setFeedback('correct');
-        
+
         setTimeout(() => {
           setFeedback(null);
           if (data.gameStatus === 'finished') {
@@ -50,10 +50,26 @@ export const GameScreen: React.FC = () => {
         setTimeout(() => setFeedback(null), 1500);
       });
 
+      // socketService.onNextTurn((data) => {
+      //   const isMyTurnNow = data.currentTurnPlayer.id === currentTurnPlayer?.id;
+      //   setIsMyTurn(isMyTurnNow);
+      // });
+
       socketService.onNextTurn((data) => {
-        const isMyTurnNow = data.currentTurnPlayer.id === currentTurnPlayer?.id;
+        const mySocketId = socketService.getSocket()?.id;
+        const isMyTurnNow = data.currentTurnPlayer.id === mySocketId;
+
+        // update store's isMyTurn
         setIsMyTurn(isMyTurnNow);
+
+        // optionally also update currentPlayerIndex & currentPlayer in store
+        updateRoom({
+          ...useGameStore.getState(),
+          currentPlayerIndex: data.currentPlayerIndex,
+          currentPlayer: data.currentTurnPlayer
+        });
       });
+
 
       socketService.onGameEnded((data) => {
         updateRoom(data.room);
@@ -75,10 +91,10 @@ export const GameScreen: React.FC = () => {
     if (gameMode === 'single') {
       // Single player logic
       const isCorrect = revealItem(guess.trim(), activePlayer.name);
-      
+
       setFeedback(isCorrect ? 'correct' : 'wrong');
       setGuess('');
-      
+
       setTimeout(() => {
         setFeedback(null);
         if (isCorrect) {
@@ -139,7 +155,7 @@ export const GameScreen: React.FC = () => {
                 </p>
               )}
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <p className="text-sm text-gray-600">
@@ -157,7 +173,7 @@ export const GameScreen: React.FC = () => {
                   )}
                 </div>
               </div>
-              
+
               {canEndGame && (
                 <button
                   onClick={handleEndGame}
@@ -185,7 +201,7 @@ export const GameScreen: React.FC = () => {
                     <motion.div
                       key="sticker"
                       initial={{ opacity: 1 }}
-                      exit={{ 
+                      exit={{
                         opacity: 0,
                         rotateY: 90,
                         scale: 0.8
@@ -199,12 +215,12 @@ export const GameScreen: React.FC = () => {
                   ) : (
                     <motion.div
                       key="revealed"
-                      initial={{ 
+                      initial={{
                         opacity: 0,
                         rotateY: -90,
                         scale: 0.8
                       }}
-                      animate={{ 
+                      animate={{
                         opacity: 1,
                         rotateY: 0,
                         scale: 1
@@ -237,9 +253,9 @@ export const GameScreen: React.FC = () => {
               value={guess}
               onChange={(e) => setGuess(e.target.value)}
               placeholder={
-                gameMode === 'single' 
+                gameMode === 'single'
                   ? `${activePlayer?.name}, make your guess...`
-                  : isMyTurn 
+                  : isMyTurn
                     ? "Your turn - make your guess..."
                     : `Waiting for ${currentTurnPlayer?.name}...`
               }
@@ -257,7 +273,7 @@ export const GameScreen: React.FC = () => {
               Guess
             </motion.button>
           </form>
-          
+
           {gameMode === 'multiplayer' && !isMyTurn && (
             <p className="text-center text-gray-500 text-sm mt-2">
               Wait for your turn to make a guess
@@ -272,11 +288,10 @@ export const GameScreen: React.FC = () => {
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
-              className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-white font-semibold shadow-lg z-50 ${
-                feedback === 'correct' 
-                  ? 'bg-green-500' 
-                  : 'bg-red-500'
-              }`}
+              className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-white font-semibold shadow-lg z-50 ${feedback === 'correct'
+                ? 'bg-green-500'
+                : 'bg-red-500'
+                }`}
             >
               {feedback === 'correct' ? '🎉 Correct! Great guess!' : '❌ Not quite right, try again!'}
             </motion.div>
@@ -289,7 +304,7 @@ export const GameScreen: React.FC = () => {
             <Trophy className="w-5 h-5 text-yellow-500" />
             <h2 className="text-xl font-bold text-gray-800">Scoreboard</h2>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {players
               .sort((a, b) => b.score - a.score)
@@ -299,21 +314,19 @@ export const GameScreen: React.FC = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`flex items-center justify-between p-3 rounded-xl ${
-                    player.name === currentPlayer?.name
-                      ? 'bg-purple-100 border-2 border-purple-300'
-                      : player.name === currentTurnPlayer?.name && gameMode === 'multiplayer'
+                  className={`flex items-center justify-between p-3 rounded-xl ${player.name === currentPlayer?.name
+                    ? 'bg-purple-100 border-2 border-purple-300'
+                    : player.name === currentTurnPlayer?.name && gameMode === 'multiplayer'
                       ? 'bg-blue-100 border-2 border-blue-300'
                       : 'bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      index === 0 ? 'bg-yellow-400 text-white' :
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${index === 0 ? 'bg-yellow-400 text-white' :
                       index === 1 ? 'bg-gray-400 text-white' :
-                      index === 2 ? 'bg-orange-400 text-white' :
-                      'bg-gray-200 text-gray-600'
-                    }`}>
+                        index === 2 ? 'bg-orange-400 text-white' :
+                          'bg-gray-200 text-gray-600'
+                      }`}>
                       {index + 1}
                     </div>
                     <div>
