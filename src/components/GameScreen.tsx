@@ -129,16 +129,16 @@ export const GameScreen: React.FC = () => {
   const canEndGame = gameMode === 'single' || currentPlayer?.isAdmin;
 
   // Debug logging
-  console.log('🎮 GameScreen render:', {
-    gameMode,
-    isMyTurn,
-    canMakeGuess,
-    currentPlayer: currentPlayer?.name,
-    currentPlayerSocketId: currentPlayer?.id,
-    currentTurnPlayer: currentTurnPlayer?.name,
-    currentTurnPlayerSocketId: currentTurnPlayer?.id,
-    mySocketId: socketService.getSocket()?.id
-  });
+  // console.log('🎮 GameScreen render:', {
+  //   gameMode,
+  //   isMyTurn,
+  //   canMakeGuess,
+  //   currentPlayer: currentPlayer?.name,
+  //   currentPlayerSocketId: currentPlayer?.id,
+  //   currentTurnPlayer: currentTurnPlayer?.name,
+  //   currentTurnPlayerSocketId: currentTurnPlayer?.id,
+  //   mySocketId: socketService.getSocket()?.id
+  // });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 p-4">
