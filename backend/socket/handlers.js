@@ -16,9 +16,9 @@ export const setupSocketHandlers = (io) => {
       try {
         const { playerName, category } = data;
         const roomId = generateRoomId();
-        
+
         console.log(`🏠 Creating room ${roomId} for category: ${category}`);
-        
+
         // Generate top 10 list
         const items = await generateTop10List(category);
         const topItems = items.map((name, index) => ({
@@ -125,18 +125,25 @@ export const setupSocketHandlers = (io) => {
 
       room.gameStatus = 'playing';
       room.currentPlayerIndex = 0;
+      console.log(room)
 
       io.to(roomId).emit('gameStarted', {
         room: {
           ...room,
-          topItems: room.topItems.map(item => ({ 
-            rank: item.rank, 
-            name: '***', 
+          topItems: room.topItems.map(item => ({
+            rank: item.rank,
+            name: '***',
             isRevealed: item.isRevealed,
-            guessedBy: item.guessedBy 
+            guessedBy: item.guessedBy
           }))
         }
       });
+
+      // Tell first player it's their turn
+      const firstPlayer = room.players[room.currentPlayerIndex];
+      if (firstPlayer) {
+        io.to(firstPlayer.id).emit('yourTurn');
+      }
 
       console.log(`🎮 Game started in room ${roomId}`);
     });
@@ -160,8 +167,8 @@ export const setupSocketHandlers = (io) => {
 
       // Check if guess matches any unrevealed item
       const itemIndex = room.topItems.findIndex(
-        item => !item.isRevealed && 
-        item.name.toLowerCase().includes(guess.toLowerCase())
+        item => !item.isRevealed &&
+          item.name.toLowerCase().includes(guess.toLowerCase())
       );
 
       if (itemIndex !== -1) {
@@ -223,7 +230,7 @@ export const setupSocketHandlers = (io) => {
       }
 
       room.gameStatus = 'finished';
-      
+
       io.to(roomId).emit('gameEnded', {
         room: {
           ...room,
@@ -237,14 +244,14 @@ export const setupSocketHandlers = (io) => {
     // Handle disconnect
     socket.on('disconnect', () => {
       console.log(`👋 User disconnected: ${socket.id}`);
-      
+
       const roomId = socket.roomId;
       if (roomId) {
         const room = rooms.get(roomId);
         if (room) {
           // Remove player from room
           room.players = room.players.filter(p => p.id !== socket.id);
-          
+
           // If room is empty, delete it
           if (room.players.length === 0) {
             rooms.delete(roomId);
@@ -254,16 +261,16 @@ export const setupSocketHandlers = (io) => {
             if (!room.players.some(p => p.isAdmin)) {
               room.players[0].isAdmin = true;
             }
-            
+
             // Notify remaining players
             io.to(roomId).emit('playerLeft', {
               room: {
                 ...room,
-                topItems: room.topItems.map(item => ({ 
-                  rank: item.rank, 
-                  name: room.gameStatus === 'finished' ? item.name : '***', 
+                topItems: room.topItems.map(item => ({
+                  rank: item.rank,
+                  name: room.gameStatus === 'finished' ? item.name : '***',
                   isRevealed: item.isRevealed,
-                  guessedBy: item.guessedBy 
+                  guessedBy: item.guessedBy
                 }))
               }
             });

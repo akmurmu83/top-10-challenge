@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { GameState, TopItem, Player, Room } from '../types/game';
+import { socketService } from '../services/socket';
 
 interface GameStore extends GameState {
   setGameMode: (mode: 'single' | 'multiplayer') => void;
@@ -115,15 +116,29 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setIsMyTurn: (isMyTurn) => set({ isMyTurn }),
 
+  // updateRoom: (room) => {
+  //   set({
+  //     category: room.category,
+  //     topItems: room.topItems,
+  //     players: room.players,
+  //     currentPlayerIndex: room.currentPlayerIndex,
+  //     gameStatus: room.gameStatus,
+  //   });
+  // },
   updateRoom: (room) => {
+    const socketId = socketService.getSocket()?.id;
+    const me = room.players.find((p) => p.id === socketId);
+
     set({
       category: room.category,
       topItems: room.topItems,
       players: room.players,
       currentPlayerIndex: room.currentPlayerIndex,
       gameStatus: room.gameStatus,
+      currentPlayer: me // 👈 automatically sets the player
     });
   },
+
 
   resetGame: () => set(initialState),
 

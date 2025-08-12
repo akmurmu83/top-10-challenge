@@ -29,6 +29,7 @@ export const GameScreen: React.FC = () => {
   const activePlayer = gameMode === 'single' ? getCurrentPlayer() : currentPlayer;
   const revealedCount = getRevealedCount();
   const currentTurnPlayer = players[currentPlayerIndex];
+  console.log(currentTurnPlayer)
 
   useEffect(() => {
     if (gameMode === 'multiplayer') {
@@ -51,7 +52,8 @@ export const GameScreen: React.FC = () => {
       });
 
       socketService.onNextTurn((data) => {
-        const isMyTurnNow = data.currentPlayer.id === currentPlayer?.id;
+        const isMyTurnNow = data.currentTurnPlayer.id === currentTurnPlayer?.id;
+        console.log(data)
         setIsMyTurn(isMyTurnNow);
       });
 

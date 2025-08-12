@@ -17,7 +17,7 @@ export const LobbyScreen: React.FC = () => {
   } = useGameStore();
 
   const isAdmin = currentPlayer?.isAdmin || false;
-  console.log(currentPlayer)
+  console.log(players)
 
   useEffect(() => {
     // Socket event listeners
