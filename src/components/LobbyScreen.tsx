@@ -17,12 +17,15 @@ export const LobbyScreen: React.FC = () => {
   } = useGameStore();
 
   const isAdmin = currentPlayer?.isAdmin || false;
-  console.log(players)
 
   useEffect(() => {
     // Socket event listeners
     socketService.onGameStarted((data) => {
       updateRoom(data.room);
+      // Set initial turn state
+      const socketId = socketService.getSocket()?.id;
+      const isMyTurnNow = data.currentPlayer?.id === socketId;
+      setIsMyTurn(isMyTurnNow);
       setGameStatus('playing');
     });
 

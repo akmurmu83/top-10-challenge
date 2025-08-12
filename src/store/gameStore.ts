@@ -128,6 +128,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   updateRoom: (room) => {
     const socketId = socketService.getSocket()?.id;
     const me = room.players.find((p) => p.id === socketId);
+    
+    // Determine if it's my turn
+    const currentTurnPlayer = room.players[room.currentPlayerIndex];
+    const isMyTurnNow = currentTurnPlayer?.id === socketId;
 
     set({
       category: room.category,
@@ -135,7 +139,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players: room.players,
       currentPlayerIndex: room.currentPlayerIndex,
       gameStatus: room.gameStatus,
-      currentPlayer: me // 👈 automatically sets the player
+      currentPlayer: me,
+      isMyTurn: isMyTurnNow
     });
   },
 

@@ -125,7 +125,6 @@ export const setupSocketHandlers = (io) => {
 
       room.gameStatus = 'playing';
       room.currentPlayerIndex = 0;
-      console.log(room)
 
       io.to(roomId).emit('gameStarted', {
         room: {
@@ -136,14 +135,10 @@ export const setupSocketHandlers = (io) => {
             isRevealed: item.isRevealed,
             guessedBy: item.guessedBy
           }))
-        }
+        },
+        currentPlayerIndex: room.currentPlayerIndex,
+        currentPlayer: room.players[room.currentPlayerIndex]
       });
-
-      // Tell first player it's their turn
-      const firstPlayer = room.players[room.currentPlayerIndex];
-      if (firstPlayer) {
-        io.to(firstPlayer.id).emit('yourTurn');
-      }
 
       console.log(`🎮 Game started in room ${roomId}`);
     });
@@ -209,9 +204,11 @@ export const setupSocketHandlers = (io) => {
       // Move to next player (regardless of correct/wrong)
       if (room.gameStatus === 'playing') {
         room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
+        const nextPlayer = room.players[room.currentPlayerIndex];
         io.to(roomId).emit('nextTurn', {
           currentPlayerIndex: room.currentPlayerIndex,
-          currentPlayer: room.players[room.currentPlayerIndex]
+          currentPlayer: nextPlayer,
+          currentTurnPlayer: nextPlayer
         });
       }
     });
