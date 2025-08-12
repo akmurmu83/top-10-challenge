@@ -21,13 +21,17 @@ export const LobbyScreen: React.FC = () => {
   useEffect(() => {
     // Socket event listeners
     socketService.onGameStarted((data) => {
-      console.log('Game started event received:', data);
+      console.log('🚀 Game started event received:', data);
       const socketId = socketService.getSocket()?.id;
-      console.log('My socket ID:', socketId);
-      console.log('Current player:', data.currentPlayer);
+      console.log('🚀 My socket ID:', socketId);
+      console.log('🚀 Current player from event:', data.currentPlayer);
+      console.log('🚀 Current player index:', data.currentPlayerIndex);
       
-      const isMyTurnNow = data.currentPlayer?.id === socketId;
-      console.log('Is my turn?', isMyTurnNow);
+      // Use the room data to determine turn
+      const currentTurnPlayer = data.room.players[data.room.currentPlayerIndex];
+      const isMyTurnNow = currentTurnPlayer?.id === socketId;
+      console.log('🚀 Current turn player:', currentTurnPlayer);
+      console.log('🚀 Is my turn?', isMyTurnNow);
       
       updateRoom(data.room);
       setIsMyTurn(isMyTurnNow);

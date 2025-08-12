@@ -138,11 +138,14 @@ export const setupSocketHandlers = (io) => {
             guessedBy: item.guessedBy
           }))
         },
-        currentPlayer: currentPlayer
+        currentPlayer: currentPlayer,
+        currentPlayerIndex: room.currentPlayerIndex
       });
 
       console.log(`🎮 Game started in room ${roomId}`);
       console.log(`👤 First player: ${currentPlayer.name} (${currentPlayer.id})`);
+      console.log(`📊 Room players:`, room.players.map(p => `${p.name}(${p.id})`));
+      console.log(`🎯 Current player index: ${room.currentPlayerIndex}`);
     });
 
     // Submit guess

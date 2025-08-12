@@ -113,12 +113,15 @@ export const GameScreen: React.FC = () => {
   const canEndGame = gameMode === 'single' || currentPlayer?.isAdmin;
 
   // Debug logging
-  console.log('GameScreen render:', {
+  console.log('🎮 GameScreen render:', {
     gameMode,
     isMyTurn,
     canMakeGuess,
     currentPlayer: currentPlayer?.name,
-    currentTurnPlayer: currentTurnPlayer?.name
+    currentPlayerSocketId: currentPlayer?.id,
+    currentTurnPlayer: currentTurnPlayer?.name,
+    currentTurnPlayerSocketId: currentTurnPlayer?.id,
+    mySocketId: socketService.getSocket()?.id
   });
 
   return (

@@ -118,18 +118,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   updateRoom: (room) => {
     const socketId = socketService.getSocket()?.id;
-    console.log('Updating room, my socket ID:', socketId);
-    console.log('Room players:', room.players);
+    console.log('🔍 Updating room, my socket ID:', socketId);
+    console.log('🔍 Room players:', room.players);
     
     const me = room.players.find((p) => p.id === socketId);
-    console.log('Found myself:', me);
+    console.log('🔍 Found myself:', me);
     
     // Determine if it's my turn
     const currentTurnPlayer = room.players[room.currentPlayerIndex];
-    console.log('Current turn player:', currentTurnPlayer);
+    console.log('🔍 Current turn player:', currentTurnPlayer);
+    console.log('🔍 Current player index:', room.currentPlayerIndex);
     
     const isMyTurnNow = currentTurnPlayer?.id === socketId;
-    console.log('Is my turn now?', isMyTurnNow);
+    console.log('🔍 Is my turn now?', isMyTurnNow);
+    console.log('🔍 Comparing:', currentTurnPlayer?.id, '===', socketId);
 
     set({
       category: room.category,
