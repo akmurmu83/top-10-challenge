@@ -112,6 +112,15 @@ export const GameScreen: React.FC = () => {
   const canMakeGuess = gameMode === 'single' || isMyTurn;
   const canEndGame = gameMode === 'single' || currentPlayer?.isAdmin;
 
+  // Debug logging
+  console.log('GameScreen render:', {
+    gameMode,
+    isMyTurn,
+    canMakeGuess,
+    currentPlayer: currentPlayer?.name,
+    currentTurnPlayer: currentTurnPlayer?.name
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 p-4">
       <div className="max-w-6xl mx-auto">

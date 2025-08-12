@@ -21,10 +21,15 @@ export const LobbyScreen: React.FC = () => {
   useEffect(() => {
     // Socket event listeners
     socketService.onGameStarted((data) => {
-      updateRoom(data.room);
-      // Set initial turn state
+      console.log('Game started event received:', data);
       const socketId = socketService.getSocket()?.id;
+      console.log('My socket ID:', socketId);
+      console.log('Current player:', data.currentPlayer);
+      
       const isMyTurnNow = data.currentPlayer?.id === socketId;
+      console.log('Is my turn?', isMyTurnNow);
+      
+      updateRoom(data.room);
       setIsMyTurn(isMyTurnNow);
       setGameStatus('playing');
     });

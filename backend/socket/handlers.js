@@ -126,6 +126,8 @@ export const setupSocketHandlers = (io) => {
       room.gameStatus = 'playing';
       room.currentPlayerIndex = 0;
 
+      const currentPlayer = room.players[room.currentPlayerIndex];
+
       io.to(roomId).emit('gameStarted', {
         room: {
           ...room,
@@ -136,11 +138,11 @@ export const setupSocketHandlers = (io) => {
             guessedBy: item.guessedBy
           }))
         },
-        currentPlayerIndex: room.currentPlayerIndex,
-        currentPlayer: room.players[room.currentPlayerIndex]
+        currentPlayer: currentPlayer
       });
 
       console.log(`🎮 Game started in room ${roomId}`);
+      console.log(`👤 First player: ${currentPlayer.name} (${currentPlayer.id})`);
     });
 
     // Submit guess
@@ -205,6 +207,7 @@ export const setupSocketHandlers = (io) => {
       if (room.gameStatus === 'playing') {
         room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
         const nextPlayer = room.players[room.currentPlayerIndex];
+        console.log(`🔄 Next turn: ${nextPlayer.name} (${nextPlayer.id})`);
         io.to(roomId).emit('nextTurn', {
           currentPlayerIndex: room.currentPlayerIndex,
           currentPlayer: nextPlayer,
